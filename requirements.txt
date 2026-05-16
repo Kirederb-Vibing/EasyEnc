@@ -1,0 +1,5 @@
+django>=5.0
+rq>=1.16
+redis>=5.0
+guessit>=3.8
+django-rq>=2.10
