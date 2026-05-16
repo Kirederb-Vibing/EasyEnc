@@ -1,8 +1,11 @@
+import django_rq
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import ScanForm
-from .models import ScanSession, VideoFile
+from .models import EncodeJob, ScanSession, VideoFile
+from .services.job_builder import build_job
 from .services.scanner import scan_directory
+from .services.worker import run_encode_job
 
 
 def index(request):
@@ -60,3 +63,20 @@ def session_update_selection(request, session_id):
             sub.save()
 
     return redirect("session_detail", session_id=session_id)
+
+
+def session_enqueue(request, session_id):
+    """Create encode jobs for selected files and dispatch to RQ."""
+    session = get_object_or_404(ScanSession, id=session_id)
+    profile = session.profile
+    queue = django_rq.get_queue("default")
+
+    selected_videos = session.videos.filter(selected=True)
+
+    for video in selected_videos:
+        job = build_job(video, profile)
+        rq_job = queue.enqueue(run_encode_job, job.id)
+        job.rq_job_id = rq_job.id
+        job.save(update_fields=["rq_job_id"])
+
+    return redirect("queue")

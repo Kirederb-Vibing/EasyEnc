@@ -7,4 +7,5 @@ urlpatterns = [
     path("scan/", views.scan, name="scan"),
     path("session/<int:session_id>/", views.session_detail, name="session_detail"),
     path("session/<int:session_id>/update/", views.session_update_selection, name="session_update"),
+    path("session/<int:session_id>/enqueue/", views.session_enqueue, name="session_enqueue"),
 ]
