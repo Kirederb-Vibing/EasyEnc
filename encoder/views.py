@@ -25,13 +25,19 @@ def browse_dirs(request):
     """API endpoint to browse directories within allowed paths."""
     path = request.GET.get("path", "")
 
-    # If no path given, return the allowed root directories
+    # If no path given, auto-navigate into the first (or only) allowed root
     if not path:
-        roots = []
-        for d in settings.ALLOWED_DIRS:
-            if os.path.isdir(d):
-                roots.append({"name": d, "path": d})
-        return JsonResponse({"dirs": roots, "current": ""})
+        roots = [d for d in settings.ALLOWED_DIRS if os.path.isdir(d)]
+        if len(roots) == 1:
+            # Only one allowed dir — go straight into it
+            path = roots[0]
+        else:
+            # Multiple roots — show them as selectable entries
+            return JsonResponse({
+                "dirs": [{"name": d, "path": d} for d in roots],
+                "current": "",
+                "parent": None,
+            })
 
     # Validate the path is allowed
     real_path = os.path.realpath(path)

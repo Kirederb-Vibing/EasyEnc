@@ -13,9 +13,9 @@
             <label class="block font-medium mb-1">Kildemappe</label>
             <div class="flex space-x-2">
                 <input type="text" name="source_path" x-model="sourcePath"
-                       class="flex-1 p-2 border rounded" placeholder="Vælg mappe..." required readonly>
+                       class="flex-1 p-2 border rounded bg-gray-50" placeholder="Vælg mappe..." required readonly>
                 <button type="button" @click="openPicker('source')"
-                        class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 text-sm font-medium">
+                        class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 text-sm font-medium whitespace-nowrap">
                     Vælg...
                 </button>
             </div>
@@ -29,9 +29,9 @@
             <label class="block font-medium mb-1">Outputmappe</label>
             <div class="flex space-x-2">
                 <input type="text" name="output_path" x-model="outputPath"
-                       class="flex-1 p-2 border rounded" placeholder="Vælg mappe..." required readonly>
+                       class="flex-1 p-2 border rounded bg-gray-50" placeholder="Vælg mappe..." required readonly>
                 <button type="button" @click="openPicker('output')"
-                        class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 text-sm font-medium">
+                        class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 text-sm font-medium whitespace-nowrap">
                     Vælg...
                 </button>
             </div>
@@ -76,51 +76,57 @@
                 <button @click="pickerOpen = false" class="text-gray-500 hover:text-gray-800 text-xl">&times;</button>
             </div>
 
-            <!-- Current path breadcrumb -->
-            <div class="px-4 py-2 bg-gray-50 text-sm text-gray-600 font-mono truncate border-b">
-                <span x-text="pickerCurrent || '/ (rodmapper)'"></span>
+            <!-- Current path -->
+            <div class="px-4 py-2 bg-indigo-50 border-b flex items-center justify-between">
+                <span class="text-sm font-mono text-indigo-800 truncate" x-text="pickerCurrent || 'Vælg en mappe nedenfor'"></span>
+                <button x-show="pickerCurrent" @click="selectCurrent()"
+                        class="ml-2 px-3 py-1 text-xs rounded bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
+                    Brug denne
+                </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-2">
+            <div class="flex-1 overflow-y-auto p-2 min-h-[200px]">
                 <!-- Go up button -->
-                <template x-if="pickerParent">
+                <template x-if="pickerParent !== null">
                     <button @click="loadDir(pickerParent)"
-                            class="w-full text-left px-3 py-2 hover:bg-gray-100 rounded flex items-center space-x-2 text-sm">
-                        <span class="text-gray-400">&#8593;</span>
-                        <span class="font-medium">..</span>
+                            class="w-full text-left px-3 py-2 hover:bg-gray-100 rounded flex items-center space-x-2 text-sm border-b mb-1">
+                        <span>&#8592;</span>
+                        <span class="font-medium">Op</span>
                     </button>
                 </template>
 
                 <!-- Directory listing -->
                 <template x-for="dir in pickerDirs" :key="dir.path">
-                    <button @click="loadDir(dir.path)"
-                            class="w-full text-left px-3 py-2 hover:bg-gray-100 rounded flex items-center space-x-2 text-sm">
-                        <span class="text-yellow-500">&#128193;</span>
-                        <span x-text="dir.name"></span>
-                    </button>
+                    <div class="flex items-center hover:bg-gray-50 rounded">
+                        <button @click="loadDir(dir.path)"
+                                class="flex-1 text-left px-3 py-2 flex items-center space-x-2 text-sm">
+                            <span class="text-yellow-500">&#128193;</span>
+                            <span x-text="dir.name"></span>
+                        </button>
+                        <button @click="selectDir(dir.path)"
+                                class="px-3 py-1 mr-2 text-xs rounded border border-indigo-300 text-indigo-600 hover:bg-indigo-50 whitespace-nowrap">
+                            Vælg
+                        </button>
+                    </div>
                 </template>
 
-                <template x-if="pickerDirs.length === 0 && !pickerLoading">
-                    <p class="text-gray-400 text-sm px-3 py-2">Ingen undermapper</p>
+                <template x-if="pickerDirs.length === 0 && !pickerLoading && pickerCurrent">
+                    <p class="text-gray-400 text-sm px-3 py-4 text-center">Ingen undermapper — brug knappen ovenfor</p>
                 </template>
 
                 <template x-if="pickerLoading">
-                    <p class="text-gray-400 text-sm px-3 py-2">Indlæser...</p>
+                    <p class="text-gray-400 text-sm px-3 py-4 text-center">Indlæser...</p>
                 </template>
 
                 <template x-if="pickerError">
-                    <p class="text-red-500 text-sm px-3 py-2" x-text="pickerError"></p>
+                    <p class="text-red-500 text-sm px-3 py-4 text-center" x-text="pickerError"></p>
                 </template>
             </div>
 
-            <div class="p-4 border-t flex justify-end space-x-2">
+            <div class="p-3 border-t flex justify-between items-center">
+                <span class="text-xs text-gray-400">Klik mappenavn for at åbne, "Vælg" for at bruge</span>
                 <button @click="pickerOpen = false"
                         class="px-4 py-2 text-sm rounded border hover:bg-gray-50">Annuller</button>
-                <button @click="selectCurrent()"
-                        class="px-4 py-2 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700 font-medium"
-                        :disabled="!pickerCurrent">
-                    Vælg denne mappe
-                </button>
             </div>
         </div>
     </div>
@@ -158,7 +164,7 @@ function scanForm() {
                     this.pickerError = data.error;
                 } else {
                     this.pickerDirs = data.dirs;
-                    this.pickerCurrent = data.current;
+                    this.pickerCurrent = data.current || '';
                     this.pickerParent = data.parent || null;
                 }
             } catch (e) {
@@ -167,13 +173,17 @@ function scanForm() {
             this.pickerLoading = false;
         },
 
-        selectCurrent() {
+        selectDir(path) {
             if (this.pickerTarget === 'source') {
-                this.sourcePath = this.pickerCurrent;
+                this.sourcePath = path;
             } else {
-                this.outputPath = this.pickerCurrent;
+                this.outputPath = path;
             }
             this.pickerOpen = false;
+        },
+
+        selectCurrent() {
+            this.selectDir(this.pickerCurrent);
         }
     }
 }
