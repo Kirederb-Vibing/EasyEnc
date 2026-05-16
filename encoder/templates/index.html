@@ -2,25 +2,42 @@
 {% block title_suffix %} — Scan{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto bg-white rounded shadow p-6" x-data="{ mode: 'film' }">
+<div class="max-w-2xl mx-auto bg-white rounded shadow p-6" x-data="scanForm()">
     <h1 class="text-2xl font-bold mb-4">Scan mappe</h1>
 
     <form method="post" action="{% url 'scan' %}">
         {% csrf_token %}
 
+        <!-- Source path with folder picker -->
         <div class="mb-4">
             <label class="block font-medium mb-1">Kildemappe</label>
-            <input type="text" name="source_path" value="{{ form.source_path.value|default_if_none:'' }}"
-                   class="w-full p-2 border rounded" placeholder="/media/source" required>
+            <div class="flex space-x-2">
+                <input type="text" name="source_path" x-model="sourcePath"
+                       class="flex-1 p-2 border rounded" placeholder="Vælg mappe..." required readonly>
+                <button type="button" @click="openPicker('source')"
+                        class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 text-sm font-medium">
+                    Vælg...
+                </button>
+            </div>
             {% if form.source_path.errors %}
             <p class="text-red-500 text-sm mt-1">{{ form.source_path.errors.0 }}</p>
             {% endif %}
         </div>
 
+        <!-- Output path with folder picker -->
         <div class="mb-4">
             <label class="block font-medium mb-1">Outputmappe</label>
-            <input type="text" name="output_path" value="{{ form.output_path.value|default_if_none:'' }}"
-                   class="w-full p-2 border rounded" placeholder="/media/output" required>
+            <div class="flex space-x-2">
+                <input type="text" name="output_path" x-model="outputPath"
+                       class="flex-1 p-2 border rounded" placeholder="Vælg mappe..." required readonly>
+                <button type="button" @click="openPicker('output')"
+                        class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 text-sm font-medium">
+                    Vælg...
+                </button>
+            </div>
+            {% if form.output_path.errors %}
+            <p class="text-red-500 text-sm mt-1">{{ form.output_path.errors.0 }}</p>
+            {% endif %}
         </div>
 
         <div class="mb-4">
@@ -47,5 +64,122 @@
             Start scan
         </button>
     </form>
+
+    <!-- Directory picker modal -->
+    <div x-show="pickerOpen" x-cloak
+         class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+         @keydown.escape.window="pickerOpen = false">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col"
+             @click.away="pickerOpen = false">
+            <div class="p-4 border-b flex items-center justify-between">
+                <h2 class="font-bold text-lg">Vælg mappe</h2>
+                <button @click="pickerOpen = false" class="text-gray-500 hover:text-gray-800 text-xl">&times;</button>
+            </div>
+
+            <!-- Current path breadcrumb -->
+            <div class="px-4 py-2 bg-gray-50 text-sm text-gray-600 font-mono truncate border-b">
+                <span x-text="pickerCurrent || '/ (rodmapper)'"></span>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-2">
+                <!-- Go up button -->
+                <template x-if="pickerParent">
+                    <button @click="loadDir(pickerParent)"
+                            class="w-full text-left px-3 py-2 hover:bg-gray-100 rounded flex items-center space-x-2 text-sm">
+                        <span class="text-gray-400">&#8593;</span>
+                        <span class="font-medium">..</span>
+                    </button>
+                </template>
+
+                <!-- Directory listing -->
+                <template x-for="dir in pickerDirs" :key="dir.path">
+                    <button @click="loadDir(dir.path)"
+                            class="w-full text-left px-3 py-2 hover:bg-gray-100 rounded flex items-center space-x-2 text-sm">
+                        <span class="text-yellow-500">&#128193;</span>
+                        <span x-text="dir.name"></span>
+                    </button>
+                </template>
+
+                <template x-if="pickerDirs.length === 0 && !pickerLoading">
+                    <p class="text-gray-400 text-sm px-3 py-2">Ingen undermapper</p>
+                </template>
+
+                <template x-if="pickerLoading">
+                    <p class="text-gray-400 text-sm px-3 py-2">Indlæser...</p>
+                </template>
+
+                <template x-if="pickerError">
+                    <p class="text-red-500 text-sm px-3 py-2" x-text="pickerError"></p>
+                </template>
+            </div>
+
+            <div class="p-4 border-t flex justify-end space-x-2">
+                <button @click="pickerOpen = false"
+                        class="px-4 py-2 text-sm rounded border hover:bg-gray-50">Annuller</button>
+                <button @click="selectCurrent()"
+                        class="px-4 py-2 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700 font-medium"
+                        :disabled="!pickerCurrent">
+                    Vælg denne mappe
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+function scanForm() {
+    return {
+        mode: 'film',
+        sourcePath: '',
+        outputPath: '',
+        pickerOpen: false,
+        pickerTarget: null,
+        pickerDirs: [],
+        pickerCurrent: '',
+        pickerParent: null,
+        pickerLoading: false,
+        pickerError: null,
+
+        openPicker(target) {
+            this.pickerTarget = target;
+            this.pickerOpen = true;
+            this.pickerError = null;
+            this.loadDir('');
+        },
+
+        async loadDir(path) {
+            this.pickerLoading = true;
+            this.pickerError = null;
+            try {
+                const url = '/api/browse/' + (path ? '?path=' + encodeURIComponent(path) : '');
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.error) {
+                    this.pickerError = data.error;
+                } else {
+                    this.pickerDirs = data.dirs;
+                    this.pickerCurrent = data.current;
+                    this.pickerParent = data.parent || null;
+                }
+            } catch (e) {
+                this.pickerError = 'Netværksfejl';
+            }
+            this.pickerLoading = false;
+        },
+
+        selectCurrent() {
+            if (this.pickerTarget === 'source') {
+                this.sourcePath = this.pickerCurrent;
+            } else {
+                this.outputPath = this.pickerCurrent;
+            }
+            this.pickerOpen = false;
+        }
+    }
+}
+</script>
+
+<style>
+[x-cloak] { display: none !important; }
+</style>
 {% endblock %}

@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("api/browse/", views.browse_dirs, name="browse_dirs"),
     path("", views.index, name="index"),
     path("scan/", views.scan, name="scan"),
     path("session/<int:session_id>/", views.session_detail, name="session_detail"),

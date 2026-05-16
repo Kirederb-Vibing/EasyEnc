@@ -1,4 +1,8 @@
+import os
+
 import django_rq
+from django.conf import settings
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import EncodingProfileForm, ScanForm
@@ -8,10 +12,59 @@ from .services.scanner import scan_directory
 from .services.worker import run_encode_job
 
 
+def _is_path_allowed(path):
+    """Check if path is under one of the allowed directories."""
+    real = os.path.realpath(path)
+    return any(
+        real == allowed or real.startswith(allowed + os.sep)
+        for allowed in settings.ALLOWED_DIRS
+    )
+
+
+def browse_dirs(request):
+    """API endpoint to browse directories within allowed paths."""
+    path = request.GET.get("path", "")
+
+    # If no path given, return the allowed root directories
+    if not path:
+        roots = []
+        for d in settings.ALLOWED_DIRS:
+            if os.path.isdir(d):
+                roots.append({"name": d, "path": d})
+        return JsonResponse({"dirs": roots, "current": ""})
+
+    # Validate the path is allowed
+    real_path = os.path.realpath(path)
+    if not _is_path_allowed(real_path):
+        return JsonResponse({"error": "Adgang nægtet"}, status=403)
+
+    if not os.path.isdir(real_path):
+        return JsonResponse({"error": "Mappen findes ikke"}, status=404)
+
+    # List subdirectories
+    dirs = []
+    try:
+        for entry in sorted(os.scandir(real_path), key=lambda e: e.name.lower()):
+            if entry.is_dir() and not entry.name.startswith("."):
+                dirs.append({"name": entry.name, "path": entry.path})
+    except PermissionError:
+        return JsonResponse({"error": "Adgang nægtet"}, status=403)
+
+    parent = os.path.dirname(real_path)
+    parent_allowed = _is_path_allowed(parent) if parent != real_path else False
+
+    return JsonResponse({
+        "dirs": dirs,
+        "current": real_path,
+        "parent": parent if parent_allowed else None,
+    })
+
+
 def index(request):
     """Main page with scan form."""
     form = ScanForm()
-    return render(request, "index.html", {"form": form})
+    allowed_dirs = settings.ALLOWED_DIRS
+    return render(request, "index.html", {"form": form, "allowed_dirs": allowed_dirs})
 
 
 def scan(request):
@@ -23,9 +76,20 @@ def scan(request):
     if not form.is_valid():
         return render(request, "index.html", {"form": form})
 
+    source_path = form.cleaned_data["source_path"]
+    output_path = form.cleaned_data["output_path"]
+
+    # Validate paths are within allowed directories
+    if not _is_path_allowed(source_path):
+        form.add_error("source_path", "Denne mappe er ikke tilgængelig.")
+        return render(request, "index.html", {"form": form})
+    if not _is_path_allowed(output_path):
+        form.add_error("output_path", "Denne mappe er ikke tilgængelig.")
+        return render(request, "index.html", {"form": form})
+
     session = scan_directory(
-        source_path=form.cleaned_data["source_path"],
-        output_path=form.cleaned_data["output_path"],
+        source_path=source_path,
+        output_path=output_path,
         mode=form.cleaned_data["mode"],
         profile=form.cleaned_data.get("profile"),
     )

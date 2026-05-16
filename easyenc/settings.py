@@ -85,6 +85,7 @@ RQ_QUEUES = {
     }
 }
 
-# Media paths
-MEDIA_SOURCE_PATH = os.environ.get("MEDIA_SOURCE_PATH", "/media/source")
-MEDIA_OUTPUT_PATH = os.environ.get("MEDIA_OUTPUT_PATH", "/media/output")
+# Allowed directories for browsing (comma-separated in env)
+ALLOWED_DIRS = [
+    d.strip() for d in os.environ.get("ALLOWED_DIRS", "/").split(",") if d.strip()
+]

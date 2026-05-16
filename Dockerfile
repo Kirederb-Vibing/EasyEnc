@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     handbrake-cli \
     mkvtoolnix \
     ffmpeg \
+    gosu \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -15,10 +16,8 @@ COPY requirements.txt .
 RUN pip3 install -r requirements.txt --break-system-packages
 
 COPY . .
-
+RUN chmod +x scripts/entrypoint.sh scripts/rqworker.sh
 RUN mkdir -p /app/data
-RUN python3 manage.py migrate --run-syncdb
-RUN python3 manage.py loaddata initial_profiles.json || true
 
 EXPOSE 8000
-ENTRYPOINT ["./scripts/entrypoint.sh"]
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]

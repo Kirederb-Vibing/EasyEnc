@@ -1,33 +1,37 @@
 version: "3.9"
 services:
   web:
-    build: .
+    image: ghcr.io/USERNAME/easyenc:latest
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/app/data
-      - ${MEDIA_SOURCE}:/media/source:ro
-      - ${MEDIA_OUTPUT}:/media/output
+      - data:/app/data
+      - ${MEDIA_PATH_1:-/dev/null}:${MEDIA_PATH_1:-/dev/null}
+      - ${MEDIA_PATH_2:-/dev/null}:${MEDIA_PATH_2:-/dev/null}
+      - ${MEDIA_PATH_3:-/dev/null}:${MEDIA_PATH_3:-/dev/null}
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - MEDIA_SOURCE_PATH=/media/source
-      - MEDIA_OUTPUT_PATH=/media/output
       - REDIS_HOST=redis
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - ALLOWED_DIRS=${ALLOWED_DIRS}
     depends_on:
       - redis
 
   worker:
-    build: .
-    command: ./scripts/rqworker.sh
+    image: ghcr.io/USERNAME/easyenc:latest
+    command: /app/scripts/rqworker.sh
     volumes:
-      - ./data:/app/data
-      - ${MEDIA_SOURCE}:/media/source:ro
-      - ${MEDIA_OUTPUT}:/media/output
+      - data:/app/data
+      - ${MEDIA_PATH_1:-/dev/null}:${MEDIA_PATH_1:-/dev/null}
+      - ${MEDIA_PATH_2:-/dev/null}:${MEDIA_PATH_2:-/dev/null}
+      - ${MEDIA_PATH_3:-/dev/null}:${MEDIA_PATH_3:-/dev/null}
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - MEDIA_SOURCE_PATH=/media/source
-      - MEDIA_OUTPUT_PATH=/media/output
       - REDIS_HOST=redis
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - ALLOWED_DIRS=${ALLOWED_DIRS}
     depends_on:
       - redis
 
@@ -37,4 +41,5 @@ services:
       - redis_data:/data
 
 volumes:
+  data:
   redis_data:
