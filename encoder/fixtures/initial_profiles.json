@@ -1,0 +1,44 @@
+[
+  {
+    "model": "encoder.encodingprofile",
+    "pk": 1,
+    "fields": {
+      "name": "Film \u2014 H.265 High Quality",
+      "mode": "film",
+      "video_codec": "x265",
+      "quality_crf": 22,
+      "encoder_preset": "slow",
+      "resolution": "source",
+      "audio_mode": "copy",
+      "container": "mkv",
+      "subtitle_default_lang": "dan",
+      "burn_forced_subs": false,
+      "soft_subs": true,
+      "skip_existing": true,
+      "keep_folder_structure": true,
+      "delete_source": false,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "encoder.encodingprofile",
+    "pk": 2,
+    "fields": {
+      "name": "Serie \u2014 H.265 Balanced",
+      "mode": "serie",
+      "video_codec": "x265",
+      "quality_crf": 24,
+      "encoder_preset": "medium",
+      "resolution": "1080p",
+      "audio_mode": "aac",
+      "container": "mkv",
+      "subtitle_default_lang": "dan",
+      "burn_forced_subs": false,
+      "soft_subs": true,
+      "skip_existing": true,
+      "keep_folder_structure": true,
+      "delete_source": false,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  }
+]
