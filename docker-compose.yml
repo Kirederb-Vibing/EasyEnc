@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   web:
-    image: ghcr.io/USERNAME/easyenc:latest
+    image: ghcr.io/kirederb-vibing/easyenc:latest
     ports:
       - "8000:8000"
     volumes:
@@ -19,7 +19,7 @@ services:
       - redis
 
   worker:
-    image: ghcr.io/USERNAME/easyenc:latest
+    image: ghcr.io/kirederb-vibing/easyenc:latest
     command: /app/scripts/rqworker.sh
     volumes:
       - data:/app/data

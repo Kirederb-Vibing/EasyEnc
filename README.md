@@ -27,7 +27,7 @@ A local web service for batch encoding video files with automatic subtitle match
 The image is published to GitHub Container Registry. No build required.
 
 ```bash
-git clone https://github.com/<username>/EasyEnc.git
+git clone https://github.com/Kirederb-Vibing/EasyEnc.git
 cd EasyEnc
 cp .env.example .env
 ```
