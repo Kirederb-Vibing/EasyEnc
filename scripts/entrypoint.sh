@@ -9,18 +9,26 @@ if [ "$PUID" != "0" ]; then
     groupadd -g "$PGID" -o easyenc 2>/dev/null || true
     useradd -u "$PUID" -g "$PGID" -o -m -s /bin/bash easyenc 2>/dev/null || true
     chown -R "$PUID":"$PGID" /app/data
-    RUN_AS="easyenc"
-else
-    RUN_AS="root"
 fi
 
-# Run migrations
-if [ "$RUN_AS" = "root" ]; then
-    python3 manage.py migrate --run-syncdb
-    python3 manage.py loaddata initial_profiles.json 2>/dev/null || true
-    exec python3 manage.py runserver 0.0.0.0:8000
+# Run migrations with flock to prevent race between web and worker
+run_cmd() {
+    if [ "$PUID" != "0" ]; then
+        su -s /bin/bash easyenc -c "$1"
+    else
+        bash -c "$1"
+    fi
+}
+
+flock /app/data/.migrate.lock -c "$(cat <<'SCRIPT'
+python3 manage.py migrate --run-syncdb 2>/dev/null
+python3 manage.py loaddata initial_profiles.json 2>/dev/null || true
+SCRIPT
+)"
+
+# Execute CMD (passed as arguments to entrypoint)
+if [ "$PUID" != "0" ]; then
+    exec gosu easyenc "$@"
 else
-    su -s /bin/bash "$RUN_AS" -c "python3 manage.py migrate --run-syncdb"
-    su -s /bin/bash "$RUN_AS" -c "python3 manage.py loaddata initial_profiles.json 2>/dev/null || true"
-    exec su -s /bin/bash "$RUN_AS" -c "python3 manage.py runserver 0.0.0.0:8000"
+    exec "$@"
 fi

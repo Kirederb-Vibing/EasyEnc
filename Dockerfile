@@ -21,3 +21,4 @@ RUN mkdir -p /app/data
 
 EXPOSE 8000
 ENTRYPOINT ["/app/scripts/entrypoint.sh"]
+CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]

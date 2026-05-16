@@ -2,44 +2,50 @@ version: "3.9"
 services:
   web:
     image: ghcr.io/kirederb-vibing/easyenc:latest
-    ports:
-      - "8000:8000"
+    restart: unless-stopped
+    expose:
+      - "8000"
     volumes:
       - data:/app/data
-      - ${MEDIA_PATH_1:-/dev/null}:${MEDIA_PATH_1:-/dev/null}
-      - ${MEDIA_PATH_2:-/dev/null}:${MEDIA_PATH_2:-/dev/null}
-      - ${MEDIA_PATH_3:-/dev/null}:${MEDIA_PATH_3:-/dev/null}
+      - /:/host
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - REDIS_HOST=redis
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
-      - ALLOWED_DIRS=${ALLOWED_DIRS}
+      - ALLOWED_DIRS=${ALLOWED_DIRS:-/host}
     depends_on:
       - redis
+    networks:
+      - proxy
+      - default
 
   worker:
     image: ghcr.io/kirederb-vibing/easyenc:latest
-    command: /app/scripts/rqworker.sh
+    restart: unless-stopped
+    command: ["python3", "manage.py", "rqworker", "default"]
     volumes:
       - data:/app/data
-      - ${MEDIA_PATH_1:-/dev/null}:${MEDIA_PATH_1:-/dev/null}
-      - ${MEDIA_PATH_2:-/dev/null}:${MEDIA_PATH_2:-/dev/null}
-      - ${MEDIA_PATH_3:-/dev/null}:${MEDIA_PATH_3:-/dev/null}
+      - /:/host
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - REDIS_HOST=redis
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
-      - ALLOWED_DIRS=${ALLOWED_DIRS}
+      - ALLOWED_DIRS=${ALLOWED_DIRS:-/host}
     depends_on:
       - redis
 
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     volumes:
       - redis_data:/data
 
 volumes:
   data:
   redis_data:
+
+networks:
+  proxy:
+    external: true
