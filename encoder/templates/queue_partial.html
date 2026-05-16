@@ -1,0 +1,58 @@
+{% if jobs %}
+<table class="w-full text-sm">
+    <thead class="bg-gray-50">
+        <tr>
+            <th class="p-2 text-left">Fil</th>
+            <th class="p-2 text-left">Profil</th>
+            <th class="p-2 text-left">Status</th>
+            <th class="p-2 text-left w-48">Fremgang</th>
+            <th class="p-2 text-right">Størrelse</th>
+            <th class="p-2 text-right">Handlinger</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for job in jobs %}
+        <tr class="border-t hover:bg-gray-50">
+            <td class="p-2 font-mono text-xs">{{ job.video.filename }}</td>
+            <td class="p-2 text-xs">{{ job.profile.name|default:"-" }}</td>
+            <td class="p-2">
+                {% if job.status == "done" %}
+                <span class="text-green-600 font-medium">Færdig</span>
+                {% elif job.status == "failed" %}
+                <span class="text-red-600 font-medium">Fejlet</span>
+                {% elif job.status == "encoding" %}
+                <span class="text-blue-600 font-medium">Encoder</span>
+                {% elif job.status == "remuxing" %}
+                <span class="text-purple-600 font-medium">Remuxer</span>
+                {% elif job.status == "skipped" %}
+                <span class="text-gray-500">Sprunget over</span>
+                {% else %}
+                <span class="text-gray-400">I kø</span>
+                {% endif %}
+            </td>
+            <td class="p-2">
+                <div class="w-full bg-gray-200 rounded-full h-4 relative">
+                    <div class="bg-indigo-500 h-4 rounded-full transition-all duration-300"
+                         style="width: {{ job.progress }}%"></div>
+                    <span class="absolute inset-0 flex items-center justify-center text-xs font-medium">
+                        {{ job.progress }}%
+                    </span>
+                </div>
+            </td>
+            <td class="p-2 text-right text-xs">
+                {% if job.status == "done" and job.input_size_bytes and job.output_size_bytes %}
+                {{ job.input_size_bytes|filesizeformat }} → {{ job.output_size_bytes|filesizeformat }}
+                {% else %}
+                {{ job.input_size_bytes|filesizeformat|default:"-" }}
+                {% endif %}
+            </td>
+            <td class="p-2 text-right">
+                <a href="{% url 'job_log' job.id %}" class="text-indigo-600 hover:underline text-xs">Log</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-gray-500">Ingen jobs i køen endnu.</p>
+{% endif %}

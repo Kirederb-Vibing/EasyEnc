@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title_suffix %} — Kø{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded shadow p-6">
+    <h1 class="text-2xl font-bold mb-4">Encoding-kø</h1>
+
+    <div id="queue-table"
+         hx-get="{% url 'queue_status' %}"
+         hx-trigger="every 2s"
+         hx-swap="innerHTML">
+        {% include "queue_partial.html" %}
+    </div>
+</div>
+{% endblock %}

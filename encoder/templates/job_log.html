@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title_suffix %} — Job log{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded shadow p-6">
+    <div class="flex items-center justify-between mb-4">
+        <h1 class="text-2xl font-bold">Job #{{ job.id }} — {{ job.video.filename }}</h1>
+        <a href="{% url 'queue' %}" class="text-indigo-600 hover:underline">← Tilbage til kø</a>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+        <div><strong>Status:</strong> {{ job.get_status_display }}</div>
+        <div><strong>Profil:</strong> {{ job.profile.name|default:"Ingen" }}</div>
+        <div><strong>Startet:</strong> {{ job.started_at|default:"Ikke startet" }}</div>
+        <div><strong>Færdig:</strong> {{ job.finished_at|default:"Ikke færdig" }}</div>
+    </div>
+
+    {% if job.handbrake_cmd %}
+    <div class="mb-4">
+        <h2 class="font-medium mb-1">HandBrake-kommando:</h2>
+        <pre class="bg-gray-900 text-green-300 p-3 rounded text-xs overflow-x-auto">{{ job.handbrake_cmd }}</pre>
+    </div>
+    {% endif %}
+
+    {% if job.mkvmerge_cmd %}
+    <div class="mb-4">
+        <h2 class="font-medium mb-1">mkvmerge-kommando:</h2>
+        <pre class="bg-gray-900 text-green-300 p-3 rounded text-xs overflow-x-auto">{{ job.mkvmerge_cmd }}</pre>
+    </div>
+    {% endif %}
+
+    <div>
+        <h2 class="font-medium mb-1">Log:</h2>
+        <pre class="bg-gray-900 text-gray-200 p-3 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto">{{ job.log|default:"Ingen log endnu." }}</pre>
+    </div>
+</div>
+{% endblock %}

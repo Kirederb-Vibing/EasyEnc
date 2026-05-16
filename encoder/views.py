@@ -80,3 +80,21 @@ def session_enqueue(request, session_id):
         job.save(update_fields=["rq_job_id"])
 
     return redirect("queue")
+
+
+def queue(request):
+    """Display live queue status page."""
+    jobs = EncodeJob.objects.select_related("video", "profile").order_by("-created_at")
+    return render(request, "queue.html", {"jobs": jobs})
+
+
+def queue_status(request):
+    """HTMX partial: return only the queue table fragment."""
+    jobs = EncodeJob.objects.select_related("video", "profile").order_by("-created_at")
+    return render(request, "queue_partial.html", {"jobs": jobs})
+
+
+def job_log(request, job_id):
+    """Display full log for an encode job."""
+    job = get_object_or_404(EncodeJob, id=job_id)
+    return render(request, "job_log.html", {"job": job})
