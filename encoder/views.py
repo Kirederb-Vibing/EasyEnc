@@ -1,8 +1,8 @@
 import django_rq
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import ScanForm
-from .models import EncodeJob, ScanSession, VideoFile
+from .forms import EncodingProfileForm, ScanForm
+from .models import EncodeJob, EncodingProfile, ScanSession, VideoFile
 from .services.job_builder import build_job
 from .services.scanner import scan_directory
 from .services.worker import run_encode_job
@@ -98,3 +98,28 @@ def job_log(request, job_id):
     """Display full log for an encode job."""
     job = get_object_or_404(EncodeJob, id=job_id)
     return render(request, "job_log.html", {"job": job})
+
+
+def settings_list(request):
+    """List encoding profiles."""
+    profiles = EncodingProfile.objects.order_by("mode", "name")
+    return render(request, "settings.html", {"profiles": profiles})
+
+
+def settings_create(request):
+    """Create a new encoding profile."""
+    if request.method != "POST":
+        return redirect("settings_list")
+
+    form = EncodingProfileForm(request.POST)
+    if form.is_valid():
+        form.save()
+    return redirect("settings_list")
+
+
+def settings_delete(request, profile_id):
+    """Delete an encoding profile."""
+    if request.method == "POST":
+        profile = get_object_or_404(EncodingProfile, id=profile_id)
+        profile.delete()
+    return redirect("settings_list")

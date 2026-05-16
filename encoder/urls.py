@@ -11,4 +11,7 @@ urlpatterns = [
     path("queue/", views.queue, name="queue"),
     path("queue/status/", views.queue_status, name="queue_status"),
     path("job/<int:job_id>/log/", views.job_log, name="job_log"),
+    path("settings/", views.settings_list, name="settings_list"),
+    path("settings/create/", views.settings_create, name="settings_create"),
+    path("settings/<int:profile_id>/delete/", views.settings_delete, name="settings_delete"),
 ]

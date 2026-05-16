@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title_suffix %} — Indstillinger{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded shadow p-6">
+    <h1 class="text-2xl font-bold mb-6">Encoding-profiler</h1>
+
+    {% if profiles %}
+    <table class="w-full text-sm mb-8">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="p-2 text-left">Navn</th>
+                <th class="p-2 text-left">Type</th>
+                <th class="p-2 text-left">Codec</th>
+                <th class="p-2 text-left">CRF</th>
+                <th class="p-2 text-left">Preset</th>
+                <th class="p-2 text-left">Opløsning</th>
+                <th class="p-2 text-left">Lyd</th>
+                <th class="p-2 text-right">Handlinger</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for profile in profiles %}
+            <tr class="border-t hover:bg-gray-50">
+                <td class="p-2 font-medium">{{ profile.name }}</td>
+                <td class="p-2">{{ profile.get_mode_display }}</td>
+                <td class="p-2">{{ profile.video_codec }}</td>
+                <td class="p-2">{{ profile.quality_crf }}</td>
+                <td class="p-2">{{ profile.encoder_preset }}</td>
+                <td class="p-2">{{ profile.resolution }}</td>
+                <td class="p-2">{{ profile.audio_mode }}</td>
+                <td class="p-2 text-right">
+                    <form method="post" action="{% url 'settings_delete' profile.id %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="text-red-600 hover:underline text-xs"
+                                onclick="return confirm('Slet denne profil?')">Slet</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-gray-500 mb-8">Ingen profiler oprettet endnu.</p>
+    {% endif %}
+
+    <h2 class="text-xl font-bold mb-4">Opret ny profil</h2>
+    <form method="post" action="{% url 'settings_create' %}" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
+        {% csrf_token %}
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Navn</label>
+            <input type="text" name="name" class="w-full p-2 border rounded" required>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Type</label>
+            <select name="mode" class="w-full p-2 border rounded">
+                <option value="film">Film</option>
+                <option value="serie">Serie</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Video codec</label>
+            <select name="video_codec" class="w-full p-2 border rounded">
+                <option value="x265">x265 (HEVC)</option>
+                <option value="x264">x264 (H.264)</option>
+                <option value="av1">AV1</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">CRF-kvalitet</label>
+            <input type="number" name="quality_crf" value="24" min="0" max="51" class="w-full p-2 border rounded">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Encoder preset</label>
+            <input type="text" name="encoder_preset" value="medium" class="w-full p-2 border rounded">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Opløsning</label>
+            <select name="resolution" class="w-full p-2 border rounded">
+                <option value="source">Samme som kilde</option>
+                <option value="1080p">1080p</option>
+                <option value="720p">720p</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Lyd</label>
+            <select name="audio_mode" class="w-full p-2 border rounded">
+                <option value="copy">Kopier alle spor</option>
+                <option value="aac">AAC stereo</option>
+                <option value="ac3">AC3</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Container</label>
+            <input type="text" name="container" value="mkv" class="w-full p-2 border rounded">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Standard undertekstsprog</label>
+            <input type="text" name="subtitle_default_lang" value="dan" class="w-full p-2 border rounded">
+        </div>
+
+        <div class="md:col-span-2 space-y-2">
+            <label class="flex items-center space-x-2">
+                <input type="checkbox" name="soft_subs" checked>
+                <span class="text-sm">Soft embed undertekster</span>
+            </label>
+            <label class="flex items-center space-x-2">
+                <input type="checkbox" name="burn_forced_subs">
+                <span class="text-sm">Brænd forced subs</span>
+            </label>
+            <label class="flex items-center space-x-2">
+                <input type="checkbox" name="skip_existing" checked>
+                <span class="text-sm">Spring over eksisterende filer</span>
+            </label>
+            <label class="flex items-center space-x-2">
+                <input type="checkbox" name="keep_folder_structure" checked>
+                <span class="text-sm">Behold mappestruktur</span>
+            </label>
+            <label class="flex items-center space-x-2">
+                <input type="checkbox" name="delete_source">
+                <span class="text-sm">Slet kildefil efter encoding</span>
+            </label>
+        </div>
+
+        <div class="md:col-span-2">
+            <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 font-medium">
+                Opret profil
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
