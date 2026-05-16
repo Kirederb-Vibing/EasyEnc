@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyEnc{% block title_suffix %}{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-indigo-700 text-white p-4 shadow">
+        <div class="container mx-auto flex items-center justify-between">
+            <a href="{% url 'index' %}" class="text-xl font-bold">EasyEnc</a>
+            <div class="space-x-4">
+                <a href="{% url 'index' %}" class="hover:underline">Scan</a>
+                <a href="{% url 'queue' %}" class="hover:underline">Kø</a>
+                <a href="{% url 'settings_list' %}" class="hover:underline">Indstillinger</a>
+            </div>
+        </div>
+    </nav>
+    <main class="container mx-auto p-6">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
